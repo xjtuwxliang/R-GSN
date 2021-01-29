@@ -37,7 +37,6 @@ parser.add_argument('--use_attack', type=ast.literal_eval, default=False)  # 3+
 args = parser.parse_args()
 args_print(args)
 
-
 dataset = PygNodePropPredDataset(name='ogbn-mag')
 data = dataset[0]
 split_idx = dataset.get_idx_split()
@@ -49,7 +48,6 @@ data.node_year_dict = None
 data.edge_reltype_dict = None
 
 print(data)
-
 edge_index_dict = data.edge_index_dict
 
 # We need to add reverse edges to the heterogeneous graph.
@@ -98,9 +96,7 @@ if not os.path.exists(args.feat_dir):
     y = np.load(f'{args.feat_dir}/author_FEAT.npy')
     out = gen_features(rows, cols, v, m, n, y)
     np.save(f'{args.feat_dir}/institution_FEAT.npy', out)
-
 print("preprocess finished")
-
 
 # We convert the individual graphs into a single big one, so that sampling
 # neighbors does not need to care about different edge types.
@@ -124,7 +120,6 @@ num_nodes_dict = {}
 for key, N in data.num_nodes_dict.items():
     num_nodes_dict[key2int[key]] = N
 
-
 paper_idx = local2global['paper']
 paper_train_idx = paper_idx[split_idx['train']['paper']]
 paper_val_test_idx = torch.cat([paper_idx[split_idx['valid']['paper']], paper_idx[split_idx['test']['paper']]])
@@ -137,7 +132,6 @@ infer_train_loader = NeighborSampler(edge_index, node_idx=paper_train_idx,
 
 infer_val_test_loader = NeighborSampler(edge_index, node_idx=paper_val_test_idx,
                                sizes=[-1, -1], batch_size=args.test_batch_size, shuffle=True, num_workers=12)
-
 
 device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
 
@@ -158,13 +152,10 @@ node_type = node_type.to(device)
 local_node_idx = local_node_idx.to(device)
 y_global = y_global.to(device)
 
-
 def train_vanilla(epoch):
     model.train()
-
     pbar = tqdm(total=paper_train_idx.size(0))
     pbar.set_description(f'Vanilla Epoch {epoch:02d}')
-
     total_loss = 0
     for batch_size, n_id, adjs in train_loader:
         n_id = n_id.to(device)
@@ -172,52 +163,37 @@ def train_vanilla(epoch):
         optimizer.zero_grad()
         out = model(n_id, x_dict, adjs, edge_type, node_type, local_node_idx)
         y = y_global[n_id][:batch_size].squeeze()
-
         loss = F.nll_loss(out, y)
-
-        # loss = label_smooth_loss(out, y)
         loss.backward()
         optimizer.step()
         total_loss += loss.item() * batch_size
         pbar.update(batch_size)
-
         train_acc = evaluator.eval({
             'y_true': y.cpu().detach().numpy().reshape(-1,1),
             'y_pred': out.cpu().detach().numpy().argmax(1).reshape(-1,1),
         })['acc']
         pbar.set_description(f'Vanilla Epoch {epoch:02d}, train acc: {100 * train_acc:.2f}')
-        # pbar.set_description(f'Vanilla Epoch {epoch:02d}, train acc: {100 * train_acc:.2f}')
-        # print(model.convs[-1].attn.squeeze().data.cpu().numpy())
-
     pbar.close()
     loss = total_loss / paper_train_idx.size(0)
-
     return loss
 
 
 def train_attack(epoch, model, optimizer):
-
     pbar = tqdm(total=paper_train_idx.size(0))
     pbar.set_description(f'Attack Epoch {epoch:02d}')
-
     total_loss = 0
     for batch_size, n_id, adjs in train_loader:
         n_id = n_id.to(device)
         adjs = [adj.to(device) for adj in adjs]
-
         forward = lambda perturb: model(n_id, x_dict, adjs, edge_type, node_type, local_node_idx, perturb)
         model_forward = (model, forward)
         perturb_shape = ((node_type[n_id] == 3).sum(), 128)
-
         y = y_global[n_id][:batch_size].squeeze()
-
         loss, _ = flag(model_forward, perturb_shape, y, args, optimizer, device, F.nll_loss)
         total_loss += loss.item() * batch_size
         pbar.update(batch_size)
     pbar.close()
-
     loss = total_loss / paper_train_idx.size(0)
-
     return loss
 
 
@@ -247,9 +223,6 @@ def infer():
         pbar.update(batch_size)
     pbar.close()
 
-
-
-
     train_acc = evaluator.eval({
         'y_true': y_true[split_idx['train']['paper']],
         'y_pred': y_pred[split_idx['train']['paper']],
@@ -269,10 +242,8 @@ def infer():
 @torch.no_grad()
 def test():
     model.eval()
-
     out = model.inference(x_dict, edge_index_dict, key2int)
     out = out[key2int['paper']]
-
     y_pred = out.argmax(dim=-1, keepdim=True).cpu()
     y_true = data.y_dict['paper']
 
@@ -301,12 +272,10 @@ for run in range(args.runs):
 
     es = EarlyStopping(args.early_stop)
     for epoch in range(1, 1 + args.epochs):
-
         if args.use_attack:
             loss = train_attack(epoch, model, optimizer)  # flag
         else:
             loss = train_vanilla(epoch)
-
         result = infer()
         logger.add_result(run, result)
         train_acc, valid_acc, test_acc = result
@@ -316,7 +285,6 @@ for run in range(args.runs):
               f'Train: {100 * train_acc:.2f}%, '
               f'Valid: {100 * valid_acc:.2f}%, '
               f'Test: {100 * test_acc:.2f}%')
-
         es(valid_acc)
         if es.early_stop:
             break
