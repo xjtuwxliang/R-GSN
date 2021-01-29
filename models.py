@@ -52,7 +52,6 @@ class RGCNConv(MessagePassing):
             else:
                 out.add_(self.propagate(edge_index[:, mask], x=x, edge_type=i))
 
-
         for i in range(self.num_node_types):
             mask = target_node_type == i
             if self.args.Norm4:
@@ -204,10 +203,8 @@ class RGNN(torch.nn.Module):
                 self.convs.append(RGSNConv(H, H, num_node_types, num_edge_types, self.args))
             self.convs.append(RGSNConv(H, O, self.num_node_types, num_edge_types, self.args))
 
-
         if self.args.Norm4:
             self.norm = torch.nn.LayerNorm(I)
-
 
         self.reset_parameters()
 
