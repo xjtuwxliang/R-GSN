@@ -191,7 +191,7 @@ class RGNN(torch.nn.Module):
 
         I, H, O = in_channels, hidden_channels, out_channels  # noqa
 
-        if self.args.conv_name is 'rgcn':
+        if self.args.conv_name == 'rgcn':
             self.convs = ModuleList()
             self.convs.append(RGCNConv(I, H, num_node_types, num_edge_types, self.args))
             for _ in range(num_layers - 2):

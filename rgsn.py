@@ -16,7 +16,7 @@ from attacks import flag
 from utils import gen_features, get_n_params, args_print, EarlyStopping
 
 
-parser = argparse.ArgumentParser(description='OGBN-MAG (SAGE)')
+parser = argparse.ArgumentParser(description='OGBN-MAG (GSN)')
 parser.add_argument('--device', type=int, default=0)
 parser.add_argument('--num_layers', type=int, default=2)
 parser.add_argument('--hidden_channels', type=int, default=64)
