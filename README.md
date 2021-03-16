@@ -1,6 +1,6 @@
 # R-GSN: The Relation-based Graph Similar Network for Heterogeneous Graph
 This is the code for paper
-- R-GSN: The Relation-based Graph Similar Network for Heterogeneous Graph[(arxiv)](https://arxiv.org/abs/2103.07877)
+- [R-GSN: The Relation-based Graph Similar Network for Heterogeneous Graph](https://arxiv.org/abs/2103.07877)
 ![RGSN-General-Paradigm](https://github.com/xjtuwxliang/R-GSN/blob/main/pics/RGSN-General-Paradigm.png)
 
 
